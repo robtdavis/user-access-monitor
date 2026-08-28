@@ -9,6 +9,7 @@ User Access Monitor is a read-only Salesforce Lightning Web Component for admini
 - Display Profile, Role, direct Permission Set count, and Permission Set Group count
 - Highlight active users who have never logged in or have not logged in during the last 90 days
 - Sort supported columns across the complete filtered result set
+- Configure 10, 50, 100, or 200 rows per page in Lightning App Builder
 - Navigate large result sets using cursor-based pagination without the 2,000-row SOQL `OFFSET` limit
 - Restrict access with the `View_User_Access_Monitor` Custom Permission
 - Fall back gracefully when session information is unavailable
@@ -46,7 +47,9 @@ If the running user cannot query `AuthSession`, the component continues displayi
 
 ## Pagination
 
-The component displays up to 100 users per page and uses opaque cursor-based pagination. Previous and Next navigation replace numbered pages and Last Page navigation because exact page jumping is not compatible with scalable keyset pagination.
+The component displays 10 users per page by default. A page administrator can select 10, 50, 100, or 200 rows using the **Rows Per Page** design property in Lightning App Builder. The server independently allowlists those values and defaults invalid input to 10.
+
+Pagination uses opaque cursors. Previous and Next navigation replace numbered pages and Last Page navigation because exact page jumping is not compatible with scalable keyset pagination.
 
 The default order is:
 

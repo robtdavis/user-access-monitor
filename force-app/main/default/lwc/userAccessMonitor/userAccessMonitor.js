@@ -1,8 +1,10 @@
-import { LightningElement } from "lwc";
+import { api, LightningElement } from "lwc";
 import getUsers from "@salesforce/apex/UserAccessMonitorController.getUsers";
 import getFilterOptions from "@salesforce/apex/UserAccessMonitorController.getFilterOptions";
 
 const SEARCH_DEBOUNCE_MS = 300;
+const DEFAULT_PAGE_SIZE = 10;
+const ALLOWED_PAGE_SIZES = new Set([10, 50, 100, 200]);
 
 const DEFAULT_REQUEST = {
   cursor: null,
@@ -28,6 +30,8 @@ const SERVER_TO_COLUMN_SORT_FIELD = {
 };
 
 export default class UserAccessMonitor extends LightningElement {
+  @api pageSize = "10";
+
   rows = [];
   response;
   filterOptionsResponse;
@@ -108,6 +112,10 @@ export default class UserAccessMonitor extends LightningElement {
   ].map((column) => ({ ...column, wrapText: true }));
 
   connectedCallback() {
+    this.request = {
+      ...this.request,
+      pageSize: this.normalizedPageSize
+    };
     this.loadFilterOptions();
     this.loadUsers();
   }
@@ -211,7 +219,10 @@ export default class UserAccessMonitor extends LightningElement {
   }
 
   handleReset() {
-    this.request = { ...DEFAULT_REQUEST };
+    this.request = {
+      ...DEFAULT_REQUEST,
+      pageSize: this.normalizedPageSize
+    };
     this.cursorHistory = [];
     this.loadUsers();
   }
@@ -233,6 +244,15 @@ export default class UserAccessMonitor extends LightningElement {
     const previousCursor = history.pop();
     this.cursorHistory = history;
     this.request = { ...this.request, cursor: previousCursor };
+    this.loadUsers();
+  }
+
+  handlePageSizeChange(event) {
+    const requestedSize = Number(event.detail.value);
+    const pageSize = ALLOWED_PAGE_SIZES.has(requestedSize)
+      ? requestedSize
+      : DEFAULT_PAGE_SIZE;
+    this.applyRequestChange({ pageSize });
     this.loadUsers();
   }
 
@@ -308,6 +328,24 @@ export default class UserAccessMonitor extends LightningElement {
 
   get totalMatchingUsers() {
     return this.response?.totalMatchingUsers || 0;
+  }
+
+  get normalizedPageSize() {
+    const configuredSize = Number(this.pageSize);
+    return ALLOWED_PAGE_SIZES.has(configuredSize)
+      ? configuredSize
+      : DEFAULT_PAGE_SIZE;
+  }
+
+  get selectedPageSize() {
+    return String(this.request.pageSize || this.normalizedPageSize);
+  }
+
+  get pageSizeOptions() {
+    return [10, 50, 100, 200].map((size) => ({
+      label: String(size),
+      value: String(size)
+    }));
   }
 
   get hasNextPage() {

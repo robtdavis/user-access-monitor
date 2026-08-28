@@ -1,7 +1,7 @@
 @IsTest
 private class UserAccessMonitorServiceTest {
   @IsTest
-  static void pageSizeIsAlwaysFixedRegardlessOfClientInput() {
+  static void allowedPageSizeIsAccepted() {
     User user = UserAccessMonitorTestDataFactory.buildUser(
       'Page',
       'Size',
@@ -14,13 +14,39 @@ private class UserAccessMonitorServiceTest {
 
     UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'Page';
+    request.pageSize = 50;
 
     UserAccessMonitorResponse response = service.getUsers(request);
 
     System.assertEquals(
-      100,
+      50,
       response.pageSize,
-      'Page size must always be the fixed server-controlled value.'
+      'An allowlisted design-time page size must be accepted.'
+    );
+  }
+
+  @IsTest
+  static void missingOrUnsupportedPageSizeDefaultsToTen() {
+    User user = UserAccessMonitorTestDataFactory.buildUser(
+      'DefaultPage',
+      'Size',
+      true
+    );
+    insert user;
+    UserAccessMonitorService service = new UserAccessMonitorService(
+      new UserAccessMonitorTestDataFactory.FakeSessionProvider(new Set<Id>())
+    );
+
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
+    request.searchTerm = 'DefaultPage';
+    request.pageSize = 37;
+
+    UserAccessMonitorResponse response = service.getUsers(request);
+
+    System.assertEquals(
+      10,
+      response.pageSize,
+      'A missing or unsupported page size must safely default to 10.'
     );
   }
 

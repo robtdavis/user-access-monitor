@@ -5,7 +5,24 @@
     <masterLabel>User Access Monitor</masterLabel>
     <description
   >Read-only operational view of Salesforce user access.</description>
-    <targets><target>lightning__AppPage</target><target
-    >lightning__HomePage</target><target
-    >lightning__RecordPage</target></targets>
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightning__HomePage</target>
+        <target>lightning__RecordPage</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig
+      targets="lightning__AppPage,lightning__HomePage,lightning__RecordPage"
+    >
+            <property
+        name="pageSize"
+        type="String"
+        label="Rows Per Page"
+        description="Number of users displayed per page."
+        default="10"
+        datasource="10,50,100,200"
+        required="true"
+      />
+        </targetConfig>
+    </targetConfigs>
 </LightningComponentBundle>

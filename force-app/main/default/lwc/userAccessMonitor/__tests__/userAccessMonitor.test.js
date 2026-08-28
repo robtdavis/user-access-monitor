@@ -17,7 +17,7 @@ function buildResponse(overrides = {}) {
       }
     ],
     totalMatchingUsers: 1,
-    pageSize: 100,
+    pageSize: 10,
     hasNextPage: false,
     nextCursor: null,
     summary: {
@@ -35,10 +35,13 @@ function buildResponse(overrides = {}) {
   };
 }
 
-function createUserAccessMonitor() {
+function createUserAccessMonitor(pageSize) {
   const element = createElement("c-user-access-monitor", {
     is: UserAccessMonitor
   });
+  if (pageSize !== undefined) {
+    element.pageSize = pageSize;
+  }
   document.body.appendChild(element);
   return element;
 }
@@ -62,11 +65,12 @@ async function createAndSettle(
     roles: [],
     profilesTruncated: false,
     rolesTruncated: false
-  }
+  },
+  pageSize
 ) {
   getFilterOptions.mockResolvedValue(optionsResponse);
   getUsers.mockResolvedValue(usersResponse);
-  const element = createUserAccessMonitor();
+  const element = createUserAccessMonitor(pageSize);
   await flushPromises();
   return element;
 }
@@ -375,6 +379,53 @@ describe("c-user-access-monitor sorting", () => {
 });
 
 describe("c-user-access-monitor pagination", () => {
+  it("uses the App Builder page size when it is allowlisted", async () => {
+    const element = await createAndSettle(
+      buildResponse({ pageSize: 50 }),
+      undefined,
+      "50"
+    );
+
+    expect(getUsers.mock.calls[0][0].request.pageSize).toBe(50);
+    expect(findComboboxByName(element, "pageSize").value).toBe("50");
+  });
+
+  it("defaults an unsupported App Builder page size to ten", async () => {
+    await createAndSettle(buildResponse(), undefined, "37");
+
+    expect(getUsers.mock.calls[0][0].request.pageSize).toBe(10);
+  });
+
+  it("shows a page-size dropdown and reloads the first page when changed", async () => {
+    const element = await createAndSettle(
+      buildResponse({
+        pageSize: 10,
+        hasNextPage: true,
+        nextCursor: "cursor-1"
+      })
+    );
+    getUsers.mockClear();
+    getUsers.mockResolvedValue(buildResponse({ pageSize: 50 }));
+
+    const pageSizeCombobox = findComboboxByName(element, "pageSize");
+    expect(pageSizeCombobox).not.toBeUndefined();
+    expect(pageSizeCombobox.value).toBe("10");
+    expect(pageSizeCombobox.options.map((option) => option.value)).toEqual([
+      "10",
+      "50",
+      "100",
+      "200"
+    ]);
+
+    pageSizeCombobox.dispatchEvent(
+      new CustomEvent("change", { detail: { value: "50" } })
+    );
+    await flushPromises();
+
+    expect(getUsers.mock.calls[0][0].request.pageSize).toBe(50);
+    expect(getUsers.mock.calls[0][0].request.cursor).toBe(null);
+  });
+
   it("requests the next page using the returned cursor and can navigate back", async () => {
     const element = await createAndSettle(
       buildResponse({ hasNextPage: true, nextCursor: "cursor-1" })

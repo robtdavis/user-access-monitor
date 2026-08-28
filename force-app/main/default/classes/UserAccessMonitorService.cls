@@ -6,7 +6,13 @@
  * UserAccessMonitorPermissionSelector.
  */
 public with sharing class UserAccessMonitorService {
-  private static final Integer PAGE_SIZE = 100;
+  private static final Integer DEFAULT_PAGE_SIZE = 10;
+  private static final Set<Integer> ALLOWED_PAGE_SIZES = new Set<Integer>{
+    10,
+    50,
+    100,
+    200
+  };
 
   private UserAccessMonitorUserSelector userSelector;
   private UserAccessMonitorPermissionSelector permissionSelector;
@@ -162,7 +168,10 @@ public with sharing class UserAccessMonitorService {
     Boolean sessionSupported
   ) {
     UserAccessMonitorModels.Criteria criteria = new UserAccessMonitorModels.Criteria();
-    criteria.pageSize = PAGE_SIZE;
+    criteria.pageSize = request != null &&
+      ALLOWED_PAGE_SIZES.contains(request.pageSize)
+      ? request.pageSize
+      : DEFAULT_PAGE_SIZE;
     criteria.searchTerm = request == null ? null : request.searchTerm;
     criteria.userStatus = request == null || String.isBlank(request.userStatus)
       ? 'ALL'
@@ -218,6 +227,7 @@ public with sharing class UserAccessMonitorService {
       new List<String>{
         String.valueOf(criteria.sortField),
         String.valueOf(criteria.sortDirection),
+        String.valueOf(criteria.pageSize),
         String.valueOf(criteria.searchTerm),
         String.valueOf(criteria.userStatus),
         String.valueOf(criteria.sessionStatus),

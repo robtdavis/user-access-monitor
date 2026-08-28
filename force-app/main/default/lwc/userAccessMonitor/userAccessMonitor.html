@@ -44,6 +44,13 @@
         options={loginOptions}
         onchange={handleFilterChange}
       ></lightning-combobox>
+      <lightning-combobox
+        name="pageSize"
+        label="Rows per page"
+        value={selectedPageSize}
+        options={pageSizeOptions}
+        onchange={handlePageSizeChange}
+      ></lightning-combobox>
       <div class="actions">
         <lightning-button-icon
           icon-name="utility:refresh"
@@ -129,11 +136,8 @@
         ></lightning-datatable>
       </div>
       <div class="pagination slds-p-around_medium">
-        <span
-          >Showing up to 100 users per page | {totalMatchingUsers} matching
-          users total</span
-        >
-        <div>
+        <span>{totalMatchingUsers} matching users total</span>
+        <div class="pagination-buttons">
           <lightning-button
             label="Previous"
             icon-name="utility:chevronleft"

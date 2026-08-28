@@ -49,6 +49,11 @@
   align-items: center;
   gap: 1rem;
 }
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
 .empty-state {
   padding: 3rem 1rem;
   text-align: center;
