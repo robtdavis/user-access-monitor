@@ -2,9 +2,9 @@
  * Retrieves Permission Set and Permission Set Group assignment counts for a batch of Users
  * in a single aggregate query, so no SOQL runs inside a per-user loop. PermissionSetAssignment
  * rows where PermissionSetGroupId is null are direct assignments; rows with a group Id are
- * counted as Permission Set Group membership. This avoids double-counting the individual
- * Permission Sets that a group grants, since those grants do not appear as separate
- * PermissionSetAssignment rows with a null group Id.
+ * counted as Permission Set Group membership. Profile-owned Permission Sets are excluded
+ * because Salesforce represents a user's Profile access as a PermissionSetAssignment even
+ * though an administrator did not directly assign that Permission Set.
  */
 public with sharing class UserAccessMonitorPermissionSelector {
   public Counts findCounts(List<User> users) {
@@ -18,7 +18,10 @@ public with sharing class UserAccessMonitorPermissionSelector {
         PermissionSetGroupId groupId,
         COUNT(Id) assignmentCount
       FROM PermissionSetAssignment
-      WHERE AssigneeId IN :userIds
+      WHERE
+        AssigneeId IN :userIds
+        AND (PermissionSetGroupId != NULL
+        OR PermissionSet.IsOwnedByProfile = FALSE)
       GROUP BY AssigneeId, PermissionSetGroupId
     ]) {
       Id assigneeId = (Id) aggregateResult.get('assigneeId');

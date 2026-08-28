@@ -552,4 +552,34 @@ private class UserAccessMonitorControllerTest {
     );
     System.assertEquals(false, response.profilesTruncated);
   }
+
+  @IsTest
+  static void authSessionProviderReturnsAConsistentSupportState() {
+    UserAccessMonitorAuthSessionProvider provider = new UserAccessMonitorAuthSessionProvider();
+
+    Test.startTest();
+    Set<Id> activeUserIds = provider.getActiveUserIds();
+    Boolean supported = provider.isSupported();
+    String warning = provider.getWarning();
+    Test.stopTest();
+
+    System.assertNotEquals(
+      null,
+      activeUserIds,
+      'The provider must always return a Set, even when AuthSession is unavailable.'
+    );
+    if (supported) {
+      System.assertEquals(
+        null,
+        warning,
+        'A supported AuthSession query should not return a warning.'
+      );
+    } else {
+      System.assertNotEquals(
+        null,
+        warning,
+        'An unsupported AuthSession query must explain the graceful fallback.'
+      );
+    }
+  }
 }
