@@ -19,10 +19,12 @@ const DEFAULT_REQUEST = {
 // The datatable's Status column must display its sort arrow using its own fieldName
 // (statusText), but the server only recognizes the underlying field name (isActive).
 const COLUMN_TO_SERVER_SORT_FIELD = {
-  statusText: "isActive"
+  statusText: "isActive",
+  userUrl: "username"
 };
 const SERVER_TO_COLUMN_SORT_FIELD = {
-  isActive: "statusText"
+  isActive: "statusText",
+  username: "userUrl"
 };
 
 export default class UserAccessMonitor extends LightningElement {
@@ -46,13 +48,24 @@ export default class UserAccessMonitor extends LightningElement {
       type: "text",
       cellAttributes: {
         iconName: { fieldName: "sessionIconName" },
-        iconAlternativeText: { fieldName: "sessionStatusText" }
+        iconAlternativeText: { fieldName: "sessionStatusText" },
+        class: { fieldName: "sessionStatusClass" }
       },
       sortable: false
     },
     { label: "First Name", fieldName: "firstName", sortable: true },
     { label: "Last Name", fieldName: "lastName", sortable: true },
-    { label: "Username", fieldName: "username", sortable: true },
+    {
+      label: "Username",
+      fieldName: "userUrl",
+      type: "url",
+      typeAttributes: {
+        label: { fieldName: "username" },
+        target: "_self",
+        tooltip: { fieldName: "username" }
+      },
+      sortable: true
+    },
     { label: "Email", fieldName: "email", sortable: true },
     { label: "Department", fieldName: "department", sortable: true },
     { label: "Company", fieldName: "company", sortable: true },
@@ -92,7 +105,7 @@ export default class UserAccessMonitor extends LightningElement {
       type: "number",
       sortable: false
     }
-  ];
+  ].map((column) => ({ ...column, wrapText: true }));
 
   connectedCallback() {
     this.loadFilterOptions();
@@ -147,6 +160,10 @@ export default class UserAccessMonitor extends LightningElement {
       sessionIconName: row.activeSessionDetected
         ? "utility:success"
         : "utility:close",
+      sessionStatusClass: row.activeSessionDetected
+        ? "slds-text-color_success"
+        : "slds-text-color_weak",
+      userUrl: `/lightning/r/User/${row.id}/view`,
       statusText: row.isActive ? "Active" : "Inactive"
     }));
   }

@@ -87,7 +87,17 @@ describe("c-user-access-monitor loading and states", () => {
     const datatable = element.shadowRoot.querySelector("lightning-datatable");
     expect(datatable.data).toHaveLength(1);
     expect(datatable.data[0].sessionStatusText).toBe("Active Session Detected");
+    expect(datatable.data[0].sessionStatusClass).toBe(
+      "slds-text-color_success"
+    );
+    expect(datatable.data[0].userUrl).toBe("/lightning/r/User/1/view");
     expect(datatable.data[0].statusText).toBe("Active");
+    expect(datatable.columns.every((column) => column.wrapText)).toBe(true);
+    const usernameColumn = datatable.columns.find(
+      (column) => column.label === "Username"
+    );
+    expect(usernameColumn.type).toBe("url");
+    expect(usernameColumn.typeAttributes.target).toBe("_self");
   });
 
   it("shows a loading spinner while the request is in flight", async () => {
@@ -343,6 +353,24 @@ describe("c-user-access-monitor sorting", () => {
     await flushPromises();
 
     expect(getUsers.mock.calls[0][0].request.sortField).toBe("lastName");
+  });
+
+  it("maps the linked Username column to the server username field", async () => {
+    const element = await createAndSettle(buildResponse());
+    getUsers.mockClear();
+
+    const datatable = element.shadowRoot.querySelector("lightning-datatable");
+    datatable.dispatchEvent(
+      new CustomEvent("sort", {
+        detail: { fieldName: "userUrl", sortDirection: "asc" }
+      })
+    );
+    await flushPromises();
+
+    expect(getUsers.mock.calls[0][0].request.sortField).toBe("username");
+    expect(
+      element.shadowRoot.querySelector("lightning-datatable").sortedBy
+    ).toBe("userUrl");
   });
 });
 
