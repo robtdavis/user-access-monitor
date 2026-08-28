@@ -1,23 +1,23 @@
 /** Request sent by the User Access Monitor LWC. */
 public with sharing class UserAccessMonitorRequest {
   @AuraEnabled
-  public String cursor;
+  public String cursor { get; set; }
   @AuraEnabled
-  public Integer pageSize;
+  public Integer pageSize { get; set; }
   @AuraEnabled
-  public String searchTerm;
+  public String searchTerm { get; set; }
   @AuraEnabled
-  public String userStatus;
+  public String userStatus { get; set; }
   @AuraEnabled
-  public String sessionStatus;
+  public String sessionStatus { get; set; }
   @AuraEnabled
-  public String profileId;
+  public String profileId { get; set; }
   @AuraEnabled
-  public String roleId;
+  public String roleId { get; set; }
   @AuraEnabled
-  public String loginRecency;
+  public String loginRecency { get; set; }
   @AuraEnabled
-  public String sortField;
+  public String sortField { get; set; }
   @AuraEnabled
-  public String sortDirection;
+  public String sortDirection { get; set; }
 }
