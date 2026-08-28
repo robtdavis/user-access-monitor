@@ -1,32 +1,154 @@
 <template>
-    <lightning-card title="User Access Monitor" icon-name="standard:people">
-        <div class="toolbar slds-p-horizontal_medium slds-p-top_small">
-            <lightning-input type="search" label="Search users" value={searchTerm} onchange={handleSearch} placeholder="Name, username, email, department..."></lightning-input>
-            <lightning-combobox name="userStatus" label="User status" value={userStatus} options={statusOptions} onchange={handleFilterChange}></lightning-combobox>
-            <lightning-combobox name="sessionStatus" label="Session status" value={sessionStatus} options={sessionOptions} onchange={handleFilterChange}></lightning-combobox>
-            <lightning-combobox name="profileId" label="Profile" value={profileId} options={profileOptions} onchange={handleFilterChange}></lightning-combobox>
-            <lightning-combobox name="roleId" label="Role" value={roleId} options={roleOptions} onchange={handleFilterChange}></lightning-combobox>
-            <lightning-combobox name="loginRecency" label="Login recency" value={loginRecency} options={loginOptions} onchange={handleFilterChange}></lightning-combobox>
-            <div class="actions">
-                <lightning-button-icon icon-name="utility:refresh" alternative-text="Refresh" title="Refresh" onclick={handleRefresh}></lightning-button-icon>
-                <lightning-button label="Reset Filters" onclick={handleReset}></lightning-button>
-            </div>
+  <lightning-card title="User Access Monitor" icon-name="standard:people">
+    <div class="toolbar slds-p-horizontal_medium slds-p-top_small">
+      <lightning-input
+        type="search"
+        label="Search users"
+        value={searchTerm}
+        onchange={handleSearch}
+        placeholder="Name, username, email, department..."
+      ></lightning-input>
+      <lightning-combobox
+        name="userStatus"
+        label="User status"
+        value={userStatus}
+        options={statusOptions}
+        onchange={handleFilterChange}
+      ></lightning-combobox>
+      <lightning-combobox
+        name="sessionStatus"
+        label="Session status"
+        value={sessionStatus}
+        options={sessionOptions}
+        disabled={isSessionFilterDisabled}
+        onchange={handleFilterChange}
+      ></lightning-combobox>
+      <lightning-combobox
+        name="profileId"
+        label="Profile"
+        value={profileId}
+        options={profileOptions}
+        onchange={handleFilterChange}
+      ></lightning-combobox>
+      <lightning-combobox
+        name="roleId"
+        label="Role"
+        value={roleId}
+        options={roleOptions}
+        onchange={handleFilterChange}
+      ></lightning-combobox>
+      <lightning-combobox
+        name="loginRecency"
+        label="Login recency"
+        value={loginRecency}
+        options={loginOptions}
+        onchange={handleFilterChange}
+      ></lightning-combobox>
+      <div class="actions">
+        <lightning-button-icon
+          icon-name="utility:refresh"
+          alternative-text="Refresh"
+          title="Refresh"
+          onclick={handleRefresh}
+        ></lightning-button-icon>
+        <lightning-button
+          label="Reset Filters"
+          onclick={handleReset}
+        ></lightning-button>
+      </div>
+    </div>
+
+    <template if:true={warningMessage}>
+      <div
+        class="notice slds-m-horizontal_medium slds-m-top_small"
+        role="status"
+      >
+        {warningMessage}
+      </div>
+    </template>
+    <template if:true={hasFilterOptionsError}>
+      <div
+        class="notice slds-m-horizontal_medium slds-m-top_small"
+        role="alert"
+      >
+        Profile and Role filter options could not be loaded:
+        {filterOptionsErrorMessage}
+      </div>
+    </template>
+    <template if:true={filterOptionsNotice}>
+      <div
+        class="notice slds-m-horizontal_medium slds-m-top_small"
+        role="status"
+      >
+        {filterOptionsNotice}
+      </div>
+    </template>
+
+    <div class="metrics slds-p-around_medium">
+      <template for:each={metrics} for:item="metric">
+        <div class="metric" key={metric.label}>
+          <span>{metric.label}</span>
+          <strong>{metric.value}</strong>
         </div>
-        <template if:true={warningMessage}><div class="notice slds-m-horizontal_medium slds-m-top_small" role="status">{warningMessage}</div></template>
-        <template if:true={paginationWarning}><div class="notice slds-m-horizontal_medium slds-m-top_small" role="status">{paginationWarning}</div></template>
-        <div class="metrics slds-p-around_medium">
-            <template for:each={metrics} for:item="metric"><div class="metric" key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong></div></template>
+      </template>
+    </div>
+
+    <template if:true={isLoading}>
+      <lightning-spinner alternative-text="Loading users"></lightning-spinner>
+    </template>
+    <template if:true={isUnauthorized}>
+      <div class="empty-state" role="alert">
+        <h2>Access not authorized</h2>
+        <p>
+          You need the User Access Monitor permission to view this information.
+        </p>
+      </div>
+    </template>
+    <template if:true={hasError}>
+      <div class="empty-state" role="alert">
+        <h2>We couldn't load users</h2>
+        <p>{errorMessage}</p>
+      </div>
+    </template>
+    <template if:true={showEmpty}>
+      <div class="empty-state">
+        <h2>No users match these filters</h2>
+        <p>Try changing the search or filters.</p>
+      </div>
+    </template>
+    <template if:true={showTable}>
+      <div class="table-wrap">
+        <lightning-datatable
+          key-field="id"
+          data={rows}
+          columns={columns}
+          sorted-by={sortedByColumnField}
+          sorted-direction={sortDirection}
+          onsort={handleSort}
+          hide-checkbox-column
+        ></lightning-datatable>
+      </div>
+      <div class="pagination slds-p-around_medium">
+        <span
+          >Showing up to 100 users per page | {totalMatchingUsers} matching
+          users total</span
+        >
+        <div>
+          <lightning-button
+            label="Previous"
+            icon-name="utility:chevronleft"
+            onclick={handlePreviousPage}
+            disabled={isPreviousDisabled}
+          ></lightning-button>
+          <lightning-button
+            label="Next"
+            icon-name="utility:chevronright"
+            icon-position="right"
+            onclick={handleNextPage}
+            disabled={isNextDisabled}
+          ></lightning-button>
         </div>
-        <template if:true={isLoading}><lightning-spinner alternative-text="Loading users"></lightning-spinner></template>
-        <template if:true={isUnauthorized}><div class="empty-state" role="alert"><h2>Access not authorized</h2><p>You need the User Access Monitor permission to view this information.</p></div></template>
-        <template if:true={hasError}><div class="empty-state" role="alert"><h2>We couldn't load users</h2><p>{errorMessage}</p></div></template>
-        <template if:true={showEmpty}><div class="empty-state"><h2>No users match these filters</h2><p>Try changing the search or filters.</p></div></template>
-        <template if:true={showTable}>
-            <div class="table-wrap"><lightning-datatable key-field="id" data={rows} columns={columns} sorted-by={sortField} sorted-direction={sortDirection} onsort={handleSort} hide-checkbox-column></lightning-datatable></div>
-            <div class="pagination slds-p-around_medium">
-                <span>Page {currentPage} of {totalPages} | {totalMatchingUsers} users</span>
-                <div><lightning-button-icon icon-name="utility:jump_to_left" alternative-text="First page" title="First page" onclick={firstPage} disabled={isFirstPage}></lightning-button-icon><lightning-button-icon icon-name="utility:chevronleft" alternative-text="Previous page" title="Previous page" onclick={previousPage} disabled={isFirstPage}></lightning-button-icon><lightning-button-icon icon-name="utility:chevronright" alternative-text="Next page" title="Next page" onclick={nextPage} disabled={isLastPage}></lightning-button-icon><lightning-button-icon icon-name="utility:jump_to_right" alternative-text="Last page" title="Last page" onclick={lastPage} disabled={isLastPage}></lightning-button-icon></div>
-            </div>
-        </template>
-    </lightning-card>
+      </div>
+    </template>
+  </lightning-card>
 </template>

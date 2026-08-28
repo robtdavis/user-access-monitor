@@ -1,129 +1,55 @@
+/**
+ * Aura entry point for the User Access Monitor. Enforces the View_User_Access_Monitor
+ * Custom Permission before returning any data, then delegates entirely to
+ * UserAccessMonitorService. Contains no SOQL, session-detection rules, or business logic.
+ *
+ * Sharing: "with sharing" is used here and throughout the feature's Apex classes.
+ * UserAccessMonitorUserSelector and UserAccessMonitorPermissionSelector explicitly run
+ * their queries with AccessLevel.SYSTEM_MODE, a deliberate, scoped exception to normal
+ * object/field-level sharing enforcement for those queries only. It is required because
+ * User, PermissionSetAssignment, and AuthSession are Setup objects: ordinary record-level
+ * sharing rules do not apply to them the way they do to standard business data, and an
+ * administrator authorized by the Custom Permission gate below needs a complete, consistent
+ * view of user access regardless of their own record visibility. The Custom Permission check
+ * below - not sharing or field-level security - is what restricts this data to authorized
+ * administrators.
+ */
 public with sharing class UserAccessMonitorController {
-    @TestVisible
-    private static SessionProvider sessionProvider = new AuthSessionProvider();
-    @TestVisible
-    private static Boolean bypassAuthorization = false;
+  @TestVisible
+  private static UserAccessMonitorModels.PermissionChecker permissionChecker = new UserAccessMonitorPermissionChecker();
+  @TestVisible
+  private static UserAccessMonitorModels.SessionProvider sessionProvider = new UserAccessMonitorAuthSessionProvider();
 
-    public interface SessionProvider {
-        Set<Id> getActiveUserIds();
-        Boolean isSupported();
-        String getWarning();
+  @AuraEnabled(cacheable=true)
+  public static UserAccessMonitorModels.Response getUsers(
+    UserAccessMonitorModels.Request request
+  ) {
+    authorize();
+    return new UserAccessMonitorService(sessionProvider).getUsers(request);
+  }
+
+  @AuraEnabled(cacheable=true)
+  public static UserAccessMonitorModels.FilterOptionsResponse getFilterOptions() {
+    authorize();
+    return new UserAccessMonitorService(sessionProvider).getFilterOptions();
+  }
+
+  private static void authorize() {
+    if (!permissionChecker.hasAccess()) {
+      // AuraHandledException.getMessage() returns a generic "Script-thrown exception"
+      // unless setMessage() is called explicitly, even though the constructor argument
+      // is what the client actually receives in error.body.message.
+      AuraHandledException authorizationException = new AuraHandledException(
+        'You are not authorized to view User Access Monitor.'
+      );
+      authorizationException.setMessage(
+        'You are not authorized to view User Access Monitor.'
+      );
+      throw authorizationException;
     }
-
-    private class AuthSessionProvider implements SessionProvider {
-        private Boolean supported = true;
-        private String warning;
-
-        public Set<Id> getActiveUserIds() {
-            Set<Id> userIds = new Set<Id>();
-            try {
-                Datetime activeSince = Datetime.now().addMinutes(-30);
-                for (AuthSession sessionRecord : [
-                    SELECT UsersId
-                    FROM AuthSession
-                    WHERE LastModifiedDate >= :activeSince AND UsersId != null
-                ]) {
-                    userIds.add(sessionRecord.UsersId);
-                }
-            } catch (Exception exceptionObject) {
-                supported = false;
-                warning = 'Active session information is unavailable. Login recency is still shown.';
-            }
-            return userIds;
-        }
-
-        public Boolean isSupported() {
-            return supported;
-        }
-
-        public String getWarning() {
-            return warning;
-        }
+  }
+}
+      );
     }
-
-    public class Request {
-        @AuraEnabled public Integer pageNumber;
-        @AuraEnabled public Integer pageSize;
-        @AuraEnabled public String searchTerm;
-        @AuraEnabled public String userStatus;
-        @AuraEnabled public String sessionStatus;
-        @AuraEnabled public String profileId;
-        @AuraEnabled public String roleId;
-        @AuraEnabled public String loginRecency;
-        @AuraEnabled public String sortField;
-        @AuraEnabled public String sortDirection;
-    }
-
-    public class Response {
-        @AuraEnabled public List<UserRow> rows = new List<UserRow>();
-        @AuraEnabled public Integer totalMatchingUsers = 0;
-        @AuraEnabled public Integer currentPage;
-        @AuraEnabled public Integer pageSize;
-        @AuraEnabled public Integer totalPages = 0;
-        @AuraEnabled public SummaryMetrics summary;
-        @AuraEnabled public Boolean sessionDetectionSupported;
-        @AuraEnabled public String warningMessage;
-        @AuraEnabled public String paginationWarning;
-    }
-
-    public class SummaryMetrics {
-        @AuraEnabled public Integer totalMatchingUsers;
-        @AuraEnabled public Integer activeUsers;
-        @AuraEnabled public Integer inactiveUsers;
-        @AuraEnabled public Integer activeSessionUsers;
-        @AuraEnabled public Integer activeNeverLoggedIn;
-        @AuraEnabled public Integer activeNoLoginIn90Days;
-    }
-
-    public class UserRow {
-        @AuraEnabled public Id id;
-        @AuraEnabled public String firstName;
-        @AuraEnabled public String lastName;
-        @AuraEnabled public String username;
-        @AuraEnabled public String email;
-        @AuraEnabled public String department;
-        @AuraEnabled public String company;
-        @AuraEnabled public String userType;
-        @AuraEnabled public Boolean isActive;
-        @AuraEnabled public Datetime lastLoginDate;
-        @AuraEnabled public Datetime createdDate;
-        @AuraEnabled public String profileName;
-        @AuraEnabled public String roleName;
-        @AuraEnabled public Integer directPermissionSetCount = 0;
-        @AuraEnabled public Integer permissionSetGroupCount = 0;
-        @AuraEnabled public Boolean activeSessionDetected;
-    }
-
-    public class FilterOption {
-        @AuraEnabled public String label;
-        @AuraEnabled public String value;
-
-        public FilterOption(String optionLabel, String optionValue) {
-            label = optionLabel;
-            value = optionValue;
-        }
-    }
-
-    public class FilterOptionsResponse {
-        @AuraEnabled public List<FilterOption> profiles = new List<FilterOption>();
-        @AuraEnabled public List<FilterOption> roles = new List<FilterOption>();
-    }
-
-    @AuraEnabled(cacheable=true)
-    public static Response getUsers(Request request) {
-        authorize();
-        return new UserAccessMonitor().load(request, sessionProvider);
-    }
-
-    @AuraEnabled(cacheable=true)
-    public static FilterOptionsResponse getFilterOptions() {
-        authorize();
-        return new UserAccessMonitor().loadFilterOptions();
-    }
-
-    private static void authorize() {
-        if (!bypassAuthorization && !FeatureManagement.checkPermission('View_User_Access_Monitor')) {
-            throw new AuraHandledException('You are not authorized to view User Access Monitor.');
-        }
-    }
+  }
 }

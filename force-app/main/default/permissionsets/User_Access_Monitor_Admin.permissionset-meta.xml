@@ -1,6 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Read-only access to the User Access Monitor component and controller.</description>
+    <description
+  >Read-only access to the User Access Monitor component and controller.</description>
     <label>User Access Monitor Admin</label>
     <classAccesses>
         <apexClass>UserAccessMonitorController</apexClass>
