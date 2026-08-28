@@ -1,12 +1,20 @@
 {
   "packageDirectories": [
     {
+      "versionName": "ver 0.1",
+      "versionNumber": "0.1.0.NEXT",
       "path": "force-app",
-      "default": true
+      "default": true,
+      "package": "User Access Monitor",
+      "versionDescription": "Salesforce user access monitoring Lightning Web Component"
     }
   ],
   "name": "user-access-monitor",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
-  "sourceApiVersion": "67.0"
+  "sourceApiVersion": "67.0",
+  "packageAliases": {
+    "User Access Monitor": "0Hog80000003ot7CAA",
+    "User Access Monitor@0.1.0-1": "04tg8000000I7kbAAC"
+  }
 }
