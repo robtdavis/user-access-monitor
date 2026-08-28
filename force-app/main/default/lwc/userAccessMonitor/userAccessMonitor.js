@@ -187,7 +187,7 @@ export default class UserAccessMonitor extends LightningElement {
   }
 
   handleSearch(event) {
-    this.applyRequestChange({ searchTerm: event.target.value });
+    this.applyRequestChange({ searchTerm: event.currentTarget.value });
     clearTimeout(this.searchTimer);
     // The timer is the debounce boundary required for server-side search.
     // eslint-disable-next-line @lwc/lwc/no-async-operation
@@ -197,7 +197,9 @@ export default class UserAccessMonitor extends LightningElement {
   }
 
   handleFilterChange(event) {
-    this.applyRequestChange({ [event.target.name]: event.detail.value });
+    this.applyRequestChange({
+      [event.currentTarget.name]: event.detail.value
+    });
     this.loadUsers();
   }
 
