@@ -20,16 +20,16 @@ public with sharing class UserAccessMonitorController {
   @TestVisible
   private static UserAccessMonitorModels.SessionProvider sessionProvider = new UserAccessMonitorAuthSessionProvider();
 
-  @AuraEnabled(cacheable=true)
-  public static UserAccessMonitorModels.Response getUsers(
-    UserAccessMonitorModels.Request request
+  @AuraEnabled
+  public static UserAccessMonitorResponse getUsers(
+    UserAccessMonitorRequest request
   ) {
     authorize();
     return new UserAccessMonitorService(sessionProvider).getUsers(request);
   }
 
-  @AuraEnabled(cacheable=true)
-  public static UserAccessMonitorModels.FilterOptionsResponse getFilterOptions() {
+  @AuraEnabled
+  public static UserAccessMonitorFilterOptionsResponse getFilterOptions() {
     authorize();
     return new UserAccessMonitorService(sessionProvider).getFilterOptions();
   }
@@ -46,10 +46,6 @@ public with sharing class UserAccessMonitorController {
         'You are not authorized to view User Access Monitor.'
       );
       throw authorizationException;
-    }
-  }
-}
-      );
     }
   }
 }

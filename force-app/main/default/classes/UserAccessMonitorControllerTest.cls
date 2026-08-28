@@ -31,11 +31,11 @@ private class UserAccessMonitorControllerTest {
       new Set<Id>()
     );
 
-    UserAccessMonitorModels.Response response;
+    UserAccessMonitorResponse response;
     Test.startTest();
     System.runAs(adminUser) {
       response = UserAccessMonitorController.getUsers(
-        new UserAccessMonitorModels.Request()
+        new UserAccessMonitorRequest()
       );
     }
     Test.stopTest();
@@ -95,10 +95,10 @@ private class UserAccessMonitorControllerTest {
     insert new List<User>{ activeUser, otherUser };
     useFakes(new Set<Id>{ activeUser.Id });
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'Monitor TestActive';
 
-    UserAccessMonitorModels.Response response = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse response = UserAccessMonitorController.getUsers(
       request
     );
 
@@ -127,9 +127,9 @@ private class UserAccessMonitorControllerTest {
     insert new List<User>{ targetUser, otherUser };
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.Request usernameRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest usernameRequest = new UserAccessMonitorRequest();
     usernameRequest.searchTerm = targetUser.Username.substringBefore('@');
-    UserAccessMonitorModels.Response usernameResponse = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse usernameResponse = UserAccessMonitorController.getUsers(
       usernameRequest
     );
     System.assertEquals(
@@ -138,9 +138,9 @@ private class UserAccessMonitorControllerTest {
       'Username search must match the intended user only.'
     );
 
-    UserAccessMonitorModels.Request emailRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest emailRequest = new UserAccessMonitorRequest();
     emailRequest.searchTerm = targetUser.Email;
-    UserAccessMonitorModels.Response emailResponse = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse emailResponse = UserAccessMonitorController.getUsers(
       emailRequest
     );
     System.assertEquals(
@@ -160,10 +160,10 @@ private class UserAccessMonitorControllerTest {
     insert targetUser;
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = '%_\' OR 1=1 --';
 
-    UserAccessMonitorModels.Response response = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse response = UserAccessMonitorController.getUsers(
       request
     );
 
@@ -189,19 +189,19 @@ private class UserAccessMonitorControllerTest {
     insert new List<User>{ activeUser, inactiveUser };
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.Request activeRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest activeRequest = new UserAccessMonitorRequest();
     activeRequest.searchTerm = 'Person';
     activeRequest.userStatus = 'ACTIVE';
-    UserAccessMonitorModels.Response activeResponse = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse activeResponse = UserAccessMonitorController.getUsers(
       activeRequest
     );
     System.assertEquals(1, activeResponse.totalMatchingUsers);
     System.assertEquals(true, activeResponse.rows[0].isActive);
 
-    UserAccessMonitorModels.Request inactiveRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest inactiveRequest = new UserAccessMonitorRequest();
     inactiveRequest.searchTerm = 'Person';
     inactiveRequest.userStatus = 'INACTIVE';
-    UserAccessMonitorModels.Response inactiveResponse = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse inactiveResponse = UserAccessMonitorController.getUsers(
       inactiveRequest
     );
     System.assertEquals(1, inactiveResponse.totalMatchingUsers);
@@ -230,10 +230,10 @@ private class UserAccessMonitorControllerTest {
     insert new List<User>{ userWithRole, userWithoutRole };
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.Request profileRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest profileRequest = new UserAccessMonitorRequest();
     profileRequest.profileId = UserAccessMonitorTestDataFactory.standardProfileId();
     profileRequest.searchTerm = 'Role';
-    UserAccessMonitorModels.Response profileResponse = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse profileResponse = UserAccessMonitorController.getUsers(
       profileRequest
     );
     System.assertEquals(
@@ -242,19 +242,19 @@ private class UserAccessMonitorControllerTest {
       'Profile filter must include both matching users.'
     );
 
-    UserAccessMonitorModels.Request roleRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest roleRequest = new UserAccessMonitorRequest();
     roleRequest.roleId = role.Id;
     roleRequest.searchTerm = 'Role';
-    UserAccessMonitorModels.Response roleResponse = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse roleResponse = UserAccessMonitorController.getUsers(
       roleRequest
     );
     System.assertEquals(1, roleResponse.totalMatchingUsers);
     System.assertEquals(userWithRole.Id, roleResponse.rows[0].id);
 
-    UserAccessMonitorModels.Request noRoleRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest noRoleRequest = new UserAccessMonitorRequest();
     noRoleRequest.roleId = 'NONE';
     noRoleRequest.searchTerm = 'Role';
-    UserAccessMonitorModels.Response noRoleResponse = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse noRoleResponse = UserAccessMonitorController.getUsers(
       noRoleRequest
     );
     System.assertEquals(1, noRoleResponse.totalMatchingUsers);
@@ -271,7 +271,7 @@ private class UserAccessMonitorControllerTest {
     insert neverLoggedIn;
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.Request neverRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest neverRequest = new UserAccessMonitorRequest();
     neverRequest.searchTerm = 'LoggedIn';
     neverRequest.loginRecency = 'NEVER';
     System.assertEquals(
@@ -279,7 +279,7 @@ private class UserAccessMonitorControllerTest {
       UserAccessMonitorController.getUsers(neverRequest).totalMatchingUsers
     );
 
-    UserAccessMonitorModels.Request recentRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest recentRequest = new UserAccessMonitorRequest();
     recentRequest.searchTerm = 'LoggedIn';
     recentRequest.loginRecency = 'DAYS_7';
     System.assertEquals(
@@ -288,7 +288,7 @@ private class UserAccessMonitorControllerTest {
       'A user who never logged in must not match a recent-login filter.'
     );
 
-    UserAccessMonitorModels.Request anyRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest anyRequest = new UserAccessMonitorRequest();
     anyRequest.searchTerm = 'LoggedIn';
     anyRequest.loginRecency = 'ANY';
     System.assertEquals(
@@ -312,19 +312,19 @@ private class UserAccessMonitorControllerTest {
     insert new List<User>{ sessionUser, noSessionUser };
     useFakes(new Set<Id>{ sessionUser.Id });
 
-    UserAccessMonitorModels.Request activeSessionRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest activeSessionRequest = new UserAccessMonitorRequest();
     activeSessionRequest.searchTerm = 'Session';
     activeSessionRequest.sessionStatus = 'ACTIVE';
-    UserAccessMonitorModels.Response activeSessionResponse = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse activeSessionResponse = UserAccessMonitorController.getUsers(
       activeSessionRequest
     );
     System.assertEquals(1, activeSessionResponse.totalMatchingUsers);
     System.assertEquals(sessionUser.Id, activeSessionResponse.rows[0].id);
 
-    UserAccessMonitorModels.Request noSessionRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest noSessionRequest = new UserAccessMonitorRequest();
     noSessionRequest.searchTerm = 'Session';
     noSessionRequest.sessionStatus = 'INACTIVE';
-    UserAccessMonitorModels.Response noSessionResponse = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse noSessionResponse = UserAccessMonitorController.getUsers(
       noSessionRequest
     );
     System.assertEquals(1, noSessionResponse.totalMatchingUsers);
@@ -348,11 +348,11 @@ private class UserAccessMonitorControllerTest {
       'Active session information is unavailable. Login recency is still shown.'
     );
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'Fallback';
     request.sessionStatus = 'ACTIVE';
 
-    UserAccessMonitorModels.Response response = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse response = UserAccessMonitorController.getUsers(
       request
     );
 
@@ -374,7 +374,8 @@ private class UserAccessMonitorControllerTest {
 
   @IsTest
   static void defaultOrderingPlacesActiveSessionUsersFirstThenActiveThenInactive() {
-    String uniqueSuffix = 'Ord' + String.valueOf(Math.abs(Crypto.getRandomInteger()));
+    String uniqueSuffix =
+      'Ord' + String.valueOf(Math.abs(Crypto.getRandomInteger()));
     User sessionUser = UserAccessMonitorTestDataFactory.buildUser(
       'Zed',
       'Session' + uniqueSuffix,
@@ -393,10 +394,10 @@ private class UserAccessMonitorControllerTest {
     insert new List<User>{ sessionUser, activeUser, inactiveUser };
     useFakes(new Set<Id>{ sessionUser.Id });
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = uniqueSuffix;
 
-    UserAccessMonitorModels.Response response = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse response = UserAccessMonitorController.getUsers(
       request
     );
 
@@ -429,12 +430,12 @@ private class UserAccessMonitorControllerTest {
     insert new List<User>{ userOne, userTwo };
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'Sort';
     request.sortField = 'Name DESC NULLS LAST, (SELECT Id FROM Contacts)';
     request.sortDirection = 'DROP TABLE users;';
 
-    UserAccessMonitorModels.Response response = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse response = UserAccessMonitorController.getUsers(
       request
     );
 
@@ -456,11 +457,11 @@ private class UserAccessMonitorControllerTest {
     insert onlyUser;
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'Cursor';
     request.cursor = 'not-a-real-cursor';
 
-    UserAccessMonitorModels.Response response = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse response = UserAccessMonitorController.getUsers(
       request
     );
 
@@ -484,10 +485,10 @@ private class UserAccessMonitorControllerTest {
     insert minimalUser;
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'Minimal';
 
-    UserAccessMonitorModels.Response response = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse response = UserAccessMonitorController.getUsers(
       request
     );
 
@@ -500,10 +501,10 @@ private class UserAccessMonitorControllerTest {
   static void emptyResultSetReturnsZeroRowsWithoutError() {
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'NoUserMatchesThisTokenAtAll12345';
 
-    UserAccessMonitorModels.Response response = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse response = UserAccessMonitorController.getUsers(
       request
     );
 
@@ -527,10 +528,10 @@ private class UserAccessMonitorControllerTest {
     insert new List<User>{ activeUser, inactiveUser };
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'Summary';
 
-    UserAccessMonitorModels.Response response = UserAccessMonitorController.getUsers(
+    UserAccessMonitorResponse response = UserAccessMonitorController.getUsers(
       request
     );
 
@@ -543,7 +544,7 @@ private class UserAccessMonitorControllerTest {
   static void getFilterOptionsReturnsProfileAndRoleOptions() {
     useFakes(new Set<Id>());
 
-    UserAccessMonitorModels.FilterOptionsResponse response = UserAccessMonitorController.getFilterOptions();
+    UserAccessMonitorFilterOptionsResponse response = UserAccessMonitorController.getFilterOptions();
 
     System.assert(
       !response.profiles.isEmpty(),

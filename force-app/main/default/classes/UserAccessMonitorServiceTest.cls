@@ -12,10 +12,10 @@ private class UserAccessMonitorServiceTest {
       new UserAccessMonitorTestDataFactory.FakeSessionProvider(new Set<Id>())
     );
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'Page';
 
-    UserAccessMonitorModels.Response response = service.getUsers(request);
+    UserAccessMonitorResponse response = service.getUsers(request);
 
     System.assertEquals(
       100,
@@ -41,19 +41,15 @@ private class UserAccessMonitorServiceTest {
       new UserAccessMonitorTestDataFactory.FakeSessionProvider(new Set<Id>())
     );
 
-    UserAccessMonitorModels.Request firstRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest firstRequest = new UserAccessMonitorRequest();
     firstRequest.searchTerm = 'Fingerprint';
-    UserAccessMonitorModels.Response firstResponse = service.getUsers(
-      firstRequest
-    );
+    UserAccessMonitorResponse firstResponse = service.getUsers(firstRequest);
 
-    UserAccessMonitorModels.Request secondRequest = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest secondRequest = new UserAccessMonitorRequest();
     secondRequest.searchTerm = 'Fingerprint Alpha';
     secondRequest.cursor = firstResponse.nextCursor;
 
-    UserAccessMonitorModels.Response secondResponse = service.getUsers(
-      secondRequest
-    );
+    UserAccessMonitorResponse secondResponse = service.getUsers(secondRequest);
 
     System.assertEquals(
       1,
@@ -78,11 +74,11 @@ private class UserAccessMonitorServiceTest {
       )
     );
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'Clamped';
     request.sessionStatus = 'ACTIVE';
 
-    UserAccessMonitorModels.Response response = service.getUsers(request);
+    UserAccessMonitorResponse response = service.getUsers(request);
 
     System.assertEquals(
       1,
@@ -108,12 +104,12 @@ private class UserAccessMonitorServiceTest {
       new UserAccessMonitorTestDataFactory.FakeSessionProvider(new Set<Id>())
     );
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'Direction';
     request.sortField = 'lastName';
     request.sortDirection = 'sideways';
 
-    UserAccessMonitorModels.Response response = service.getUsers(request);
+    UserAccessMonitorResponse response = service.getUsers(request);
 
     System.assertEquals(
       userA.Id,
@@ -134,10 +130,10 @@ private class UserAccessMonitorServiceTest {
       new UserAccessMonitorTestDataFactory.FakeSessionProvider(new Set<Id>())
     );
 
-    UserAccessMonitorModels.Request request = new UserAccessMonitorModels.Request();
+    UserAccessMonitorRequest request = new UserAccessMonitorRequest();
     request.searchTerm = 'OnePage';
 
-    UserAccessMonitorModels.Response response = service.getUsers(request);
+    UserAccessMonitorResponse response = service.getUsers(request);
 
     System.assertEquals(false, response.hasNextPage);
     System.assertEquals(null, response.nextCursor);

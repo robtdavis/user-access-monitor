@@ -1,59 +1,116 @@
-# Salesforce DX Project
+# User Access Monitor
 
-Salesforce DX is a development approach that brings source-driven development, team collaboration, and continuous integration to the Salesforce Platform. Instead of working directly in an org through a web browser, you work with metadata as source files in a local DX project, track changes in version control, and deploy through automated processes.
+User Access Monitor is a read-only Salesforce Lightning Web Component for administrators who need a concise operational view of users, access assignments, and recent login activity.
 
-This project template gets you started with the tools and structure you need to build Salesforce applications using source control, scratch orgs, and the Salesforce CLI.
+## Features
 
-## Prerequisites
+- Search users by name, username, email, department, company, Profile, or Role
+- Filter by active status, detected session status, Profile, Role, and login recency
+- Display Profile, Role, direct Permission Set count, and Permission Set Group count
+- Highlight active users who have never logged in or have not logged in during the last 90 days
+- Sort supported columns across the complete filtered result set
+- Navigate large result sets using cursor-based pagination without the 2,000-row SOQL `OFFSET` limit
+- Restrict access with the `View_User_Access_Monitor` Custom Permission
+- Fall back gracefully when session information is unavailable
 
-Before you start, make sure you have:
+The component is strictly read-only. It cannot activate, deactivate, freeze, edit, or delete users.
 
-- **Salesforce CLI** - Download from [developer.salesforce.com/tools/salesforcecli](https://developer.salesforce.com/tools/salesforcecli). See [Install Salesforce CLI](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_install_cli.htm) for details.
-- **VS Code with Salesforce Extension Pack** - See [Installation Instructions](https://developer.salesforce.com/docs/platform/sfvscode-extensions/guide/install.html) for details. Includes the Agentforce Vibes extension.
-- **A development org** - Sign up for a free Developer Edition org [here](https://developer.salesforce.com/signup).
-- **Dev Hub enabled** (optional, required to create scratch orgs) - You can enable Dev Hub in your development org under Setup > Dev Hub. See [Provide Developers Access to Salesforce DX Tools](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_dx_tools.htm).
+## Architecture
 
-## Project Structure
+| Class                                  | Responsibility                                                                           |
+| -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `UserAccessMonitorController`          | Lightning entry point and authorization gate                                             |
+| `UserAccessMonitorService`             | Request normalization, orchestration, metrics, pagination cursors, and response assembly |
+| `UserAccessMonitorUserSelector`        | User, Profile, Role, count, filtering, sorting, and keyset queries                       |
+| `UserAccessMonitorPermissionSelector`  | Direct Permission Set and Permission Set Group aggregate counts                          |
+| `UserAccessMonitorAuthSessionProvider` | Best-effort detection of recently active sessions                                        |
+| `UserAccessMonitorPermissionChecker`   | Custom Permission evaluation                                                             |
+| `UserAccessMonitorModels`              | Internal interfaces, criteria, cursors, and selector result types                        |
+| Top-level request and response DTOs    | Supported Lightning/Apex data boundary                                                   |
 
-Your DX project follows this structure:
+All user-supplied filter values are bound with `Database.queryWithBinds`. Sort fields and directions are allowlisted before they are added to dynamic SOQL.
 
-- **`force-app/main/default/`** - Your metadata source files live in this default package directory. You can configure additional package directories in the `sfdx-project.json` file.
-- **`config/`** - Scratch org definitions and project settings
-- **`scripts/`** - Automation scripts for common tasks
-- **`sfdx-project.json`** - Project manifest that defines package directories, namespace, API version, and other project-level settings
+## Security
 
-See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm).
+Access requires both Apex class access to `UserAccessMonitorController` and the `View_User_Access_Monitor` Custom Permission. The included `User_Access_Monitor_Admin` Permission Set grants both requirements.
 
-## Get Started
+The feature intentionally queries administrative setup data in system mode after the Custom Permission check. Only fields needed by the component are selected. Session identifiers, tokens, IP addresses, and authentication secrets are never queried or returned.
 
-Ready to start developing? The [Get Started with Salesforce DX](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_get_started_dx.htm) guide walks you through your first project, from creating a scratch org to creating a simple Apex class or LWC to deploying your code to a sandbox.
+## Session detection
 
-## Common Salesforce CLI Commands
+The green indicator means **Active Session Detected**, not “online.”
 
-Here are common CLI commands that you'll use the most:
+The provider looks for an `AuthSession` record whose `LastModifiedDate` is within the preceding 30 minutes. This is a recent-activity signal, not proof that a person is currently looking at Salesforce. Stale sessions, mobile sessions, API clients, integrations, multiple sessions, and organization timeout policies can affect the result.
 
-- `sf org login web`: Authorize an org
-- `sf org open`: Open your org in a browser
-- `sf org create scratch`: Create a scratch org
-- `sf project deploy start`: Deploy metadata to your org
-- `sf project retrieve start`: Retrieve metadata from your org
-- `sf template generate <artifact>`: Scaffold new components, such as Apex classes and triggers, LWC components, Lightning apps, and more
-- `sf apex <command>`: Run Apex tests, run anonymous Apex blocks, and view logs
-- `sf data <command>`: Work with test data
-- `sf alias <command>`: Manage org aliases
-- `sf config <command>`: Configure CLI settings
+If the running user cannot query `AuthSession`, the component continues displaying users and login-recency information, shows a warning, displays the session metric as unavailable, and disables session-status filtering.
 
-## Use Agentforce Vibes to Build Lightning Apps
+## Pagination
 
-Transform your ideas into custom Lightning apps that extend CRM workflows directly in Lightning Experience. Through natural conversations with Agentforce Vibes, implement custom objects and fields, complex business logic, and dynamic UI components. See [Build a Lightning App Using Agentforce Vibes](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/lexapp-overview.html).
+The component displays up to 100 users per page and uses opaque cursor-based pagination. Previous and Next navigation replace numbered pages and Last Page navigation because exact page jumping is not compatible with scalable keyset pagination.
 
-## Additional Resources
+The default order is:
 
-- [Agentforce Vibes Developer Guide](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/einstein-overview.html)
-- [Salesforce CLI Installation Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/)
-- [Salesforce CLI Plugin Development Guide](https://developer.salesforce.com/docs/platform/salesforce-cli-plugin/guide/conceptual-overview.html)
-- [Salesforce VS Code Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
+1. Users with an active session detected
+2. Active users without a detected session
+3. Inactive users
+4. Last Name
+5. First Name
+6. User ID as a deterministic tie-breaker
 
-# user-access-monitor
+Session-first ordering uses two query buckets because session status is not a field on `User` and cannot be placed directly in a User SOQL `ORDER BY` clause.
+
+## Installation
+
+Deploy the complete source directory:
+
+```bash
+sf project deploy start --source-dir force-app/main/default --target-org YOUR_ORG_ALIAS
+```
+
+Or deploy using the manifest:
+
+```bash
+sf project deploy start --manifest manifest/package.xml --target-org YOUR_ORG_ALIAS
+```
+
+Assign the included Permission Set:
+
+```bash
+sf org assign permset --name User_Access_Monitor_Admin --target-org YOUR_ORG_ALIAS
+```
+
+After deployment, open Lightning App Builder and add **User Access Monitor** to an App Page, Home Page, or Record Page. Activate the page for the intended administrators.
+
+## Development
+
+```bash
+npm ci
+npm run prettier:verify
+npm run lint
+npm run test:unit
+```
+
+Run Apex tests after authenticating a Salesforce org:
+
+```bash
+sf apex run test --class-names UserAccessMonitorControllerTest,UserAccessMonitorServiceTest,UserAccessMonitorUserSelectorTest,UserAccessMonitorPermissionSelectorTest --result-format human --wait 20 --target-org YOUR_ORG_ALIAS
+```
+
+## Manual verification
+
+- Confirm a user without the Permission Set receives no data
+- Confirm an assigned administrator can load the component
+- Search by full name, username, email, Profile, and Role
+- Exercise every filter and sortable column
+- Verify Previous and Next navigation with more than 100 matching users
+- Confirm Reset Filters returns to the first page
+- Confirm Refresh requests current users and filter options
+- Confirm users without Roles or login dates render correctly
+- Confirm the component remains usable when `AuthSession` cannot be queried
+- Verify the layout at desktop, tablet, and narrow viewport widths
+
+## Known limitations
+
+- Session detection is an approximation based on recent `AuthSession` activity.
+- Profile and Role dropdowns return up to 2,000 options. A notice appears if either list is truncated; text search can still find users by Profile or Role name.
+- Cursor-based pagination does not provide page numbers or direct Last Page navigation.

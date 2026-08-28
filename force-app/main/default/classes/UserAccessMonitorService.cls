@@ -33,9 +33,7 @@ public with sharing class UserAccessMonitorService {
     this.sessionProvider = sessionProvider;
   }
 
-  public UserAccessMonitorModels.Response getUsers(
-    UserAccessMonitorModels.Request request
-  ) {
+  public UserAccessMonitorResponse getUsers(UserAccessMonitorRequest request) {
     Set<Id> sessionUserIds = sessionProvider.getActiveUserIds();
     Boolean sessionSupported = sessionProvider.isSupported();
 
@@ -46,7 +44,7 @@ public with sharing class UserAccessMonitorService {
     criteria.activeSessionUserIds = sessionUserIds;
     criteria.afterCursor = resolveCursor(request, criteria);
 
-    UserAccessMonitorModels.Response response = new UserAccessMonitorModels.Response();
+    UserAccessMonitorResponse response = new UserAccessMonitorResponse();
     response.sessionDetectionSupported = sessionSupported;
     response.warningMessage = sessionProvider.getWarning();
     response.pageSize = criteria.pageSize;
@@ -79,15 +77,12 @@ public with sharing class UserAccessMonitorService {
     return response;
   }
 
-  public UserAccessMonitorModels.FilterOptionsResponse getFilterOptions() {
-    UserAccessMonitorModels.FilterOptionsResponse response = new UserAccessMonitorModels.FilterOptionsResponse();
+  public UserAccessMonitorFilterOptionsResponse getFilterOptions() {
+    UserAccessMonitorFilterOptionsResponse response = new UserAccessMonitorFilterOptionsResponse();
     UserAccessMonitorModels.ProfileOptionsResult profileResult = userSelector.findProfiles();
     for (Profile profileRecord : profileResult.records) {
       response.profiles.add(
-        new UserAccessMonitorModels.FilterOption(
-          profileRecord.Name,
-          profileRecord.Id
-        )
+        new UserAccessMonitorFilterOption(profileRecord.Name, profileRecord.Id)
       );
     }
     response.profilesTruncated = profileResult.truncated;
@@ -95,19 +90,19 @@ public with sharing class UserAccessMonitorService {
     UserAccessMonitorModels.RoleOptionsResult roleResult = userSelector.findRoles();
     for (UserRole roleRecord : roleResult.records) {
       response.roles.add(
-        new UserAccessMonitorModels.FilterOption(roleRecord.Name, roleRecord.Id)
+        new UserAccessMonitorFilterOption(roleRecord.Name, roleRecord.Id)
       );
     }
     response.rolesTruncated = roleResult.truncated;
     return response;
   }
 
-  private UserAccessMonitorModels.SummaryMetrics buildSummary(
+  private UserAccessMonitorSummaryMetrics buildSummary(
     UserAccessMonitorModels.Criteria criteria,
     Integer total,
     Boolean sessionSupported
   ) {
-    UserAccessMonitorModels.SummaryMetrics summary = new UserAccessMonitorModels.SummaryMetrics();
+    UserAccessMonitorSummaryMetrics summary = new UserAccessMonitorSummaryMetrics();
     summary.totalMatchingUsers = total;
     summary.activeUsers = userSelector.countActive(criteria);
     summary.inactiveUsers = userSelector.countInactive(criteria);
@@ -124,13 +119,13 @@ public with sharing class UserAccessMonitorService {
     return summary;
   }
 
-  private static UserAccessMonitorModels.UserRow toRow(
+  private static UserAccessMonitorUserRow toRow(
     User userRecord,
     UserAccessMonitorPermissionSelector.Counts counts,
     Set<Id> sessionUserIds,
     Boolean sessionSupported
   ) {
-    UserAccessMonitorModels.UserRow row = new UserAccessMonitorModels.UserRow();
+    UserAccessMonitorUserRow row = new UserAccessMonitorUserRow();
     row.id = userRecord.Id;
     row.firstName = userRecord.FirstName;
     row.lastName = userRecord.LastName;
@@ -163,7 +158,7 @@ public with sharing class UserAccessMonitorService {
 
   /** Normalizes and validates the incoming request into safe, allowlisted criteria values. */
   private static UserAccessMonitorModels.Criteria normalize(
-    UserAccessMonitorModels.Request request,
+    UserAccessMonitorRequest request,
     Boolean sessionSupported
   ) {
     UserAccessMonitorModels.Criteria criteria = new UserAccessMonitorModels.Criteria();
@@ -205,7 +200,7 @@ public with sharing class UserAccessMonitorService {
 
   /** Only accepts a cursor whose fingerprint matches the current filter/sort combination. */
   private UserAccessMonitorModels.Cursor resolveCursor(
-    UserAccessMonitorModels.Request request,
+    UserAccessMonitorRequest request,
     UserAccessMonitorModels.Criteria criteria
   ) {
     UserAccessMonitorModels.Cursor decoded = decodeCursor(
@@ -241,7 +236,7 @@ public with sharing class UserAccessMonitorService {
     return EncodingUtil.base64Encode(Blob.valueOf(JSON.serialize(cursor)));
   }
 
-  /** Malformed or tampered cursors are treated as "start from the first page", never as errors. */
+  /** Malformed cursors are treated as "start from the first page", never as errors. */
   private static UserAccessMonitorModels.Cursor decodeCursor(
     String encodedCursor
   ) {
